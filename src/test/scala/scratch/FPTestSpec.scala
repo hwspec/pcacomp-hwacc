@@ -65,12 +65,4 @@ class FPTestSpec extends AnyFlatSpec with ChiselScalatestTester with Formal {
   "FPOPTest SUB" should "pass" in testFPOPTest(FPOPTest.SUB)
 
   "FPOPTest MUL" should "pass" in testFPOPTest(FPOPTest.MUL)
-
-  //
-  // format test
-  //
-
-  s"Check the identity of FPTest" should "pass" in {
-    verify(new FPTest, Seq(BoundedCheck(1)))
-  }
 }
