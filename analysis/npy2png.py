@@ -7,7 +7,7 @@ import sys
 
 print(len(sys.argv))
 if len(sys.argv) < 2:
-    print('Usage: npy2png.py filename [frameno]')
+    print('Usage: npy2png.py filename')
     sys.exit(1)
 
 datafn=sys.argv[1]
@@ -15,8 +15,7 @@ print(f"datafn={datafn}")
 
 images = np.load(datafn)['images']
 print(f"images.shape={images.shape}")
-print(f'mean={np.mean(images)} std={np.std(images)} min={np.min(images)} max={np.max(images)} nbits={int(m.ceil(m.log(np.max(images),2.0)))}')
 
-#imgpxs = images[0].astype(np.uint16)
-#imsave('check.png', imgpxs)
+imgpxs = images[0].astype(np.uint16)
+imsave('check.png', imgpxs)
 

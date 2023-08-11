@@ -14,7 +14,8 @@
 # By default, S=1 and basneme='data1small'
 #
 
-from skimage.io import imread, imsave
+#from skimage.io import imread, imsave
+import matplotlib.pyplot as plt
 import math as m
 import numpy as np
 import sys, os, time
@@ -136,7 +137,7 @@ def evaluatePCA(d, rem, iem, sprime, dataprec, invprec):
 
     mse = np.sum((data - data_approx)**2) / (data.shape[1])
 
-    return (mse, data_approx)
+    return (mse, data - data_approx)
 
 def evaluatePCA_scaling(d, rem, iem, sprime, dataprec, invprec, scaling=1):
     data = np.array([d]).astype(dataprec)
@@ -170,9 +171,15 @@ def evaluate_pca(data, fstart, fend, sprime, rem, iem, cr, w, h):
         msef16array.append(msef16)
         #   msef16sarray.append(msef16s)
         if (fno == 0):
-            imsave(f's{sprime}-fno{fno}-orig.png', data[fno].reshape(w,h))
-            imsave(f's{sprime}-fno{fno}-recf64.png', recf64.reshape(w,h))
-            imsave(f's{sprime}-fno{fno}-recf32.png', recf32.reshape(w,h))
+            def genpng(fn, a):
+                plt.imshow(a)
+                plt.colorbar()
+                plt.savefig(fn)
+                plt.clf()
+            genpng(f's{sprime}-fno{fno}-orig.png', data[fno].reshape(w,h))
+            genpng(f's{sprime}-fno{fno}-recf64.png', recf64.reshape(w,h))
+            genpng(f's{sprime}-fno{fno}-recf32.png', recf32.reshape(w,h))
+            genpng(f's{sprime}-fno{fno}-recf16.png', recf16.reshape(w,h))
 
     print('')
     print(f'[stats]')
