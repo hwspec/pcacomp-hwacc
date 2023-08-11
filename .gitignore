@@ -1,6 +1,7 @@
 hardfloat
 src/main/scala/hardfloat
 *~
+analysis/data
 
 ### Project Specific stuff
 test_run_dir/*

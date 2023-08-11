@@ -2,11 +2,21 @@
 
 from skimage.io import imread, imsave
 import numpy as np
+import math as m
+import sys
 
-images = np.load('testdata.npz')['images']
-print(images.shape)
-print(f'max={np.max(images)}')
+print(len(sys.argv))
+if len(sys.argv) < 2:
+    print('Usage: npy2png.py filename [frameno]')
+    sys.exit(1)
 
-imgpxs = images[0].astype(np.uint16)
-imsave('check.png', imgpxs)
+datafn=sys.argv[1]
+print(f"datafn={datafn}")
+
+images = np.load(datafn)['images']
+print(f"images.shape={images.shape}")
+print(f'mean={np.mean(images)} std={np.std(images)} min={np.min(images)} max={np.max(images)} nbits={int(m.ceil(m.log(np.max(images),2.0)))}')
+
+#imgpxs = images[0].astype(np.uint16)
+#imsave('check.png', imgpxs)
 
