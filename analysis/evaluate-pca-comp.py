@@ -26,9 +26,10 @@ from functools import reduce
 g_basename='data1small'
 
 g_firstframe=0
-g_lastframe=10
+g_lastframe=5
 g_sprime = 1 # 3000
 g_verbose = True # False
+g_qbits = 16  # nbits for quantized inv. enc. mat.
 
 if len(sys.argv) > 1:
     g_sprime = int(sys.argv[1])
@@ -69,6 +70,32 @@ def getscalingfactorfp16(inv):
     print(f"scalingfactor={f}")
     print(f"inv scaling: ({invminv},{invmaxv}) => ({s_invminv}, {s_invmaxv})")
     return f
+
+
+def getquantized(inv):
+    naccums = 128*128
+    pixmaxv = (1 << 8) - 1
+
+    invminv = np.min(inv)
+    invmaxv = np.max(inv)
+
+    f16max=65504.0
+    f16min=6.1035e-5
+
+    #imax=65535.0
+    imax=(1<<12) - 1
+
+    d = (invmaxv-invminv)/imax
+    o = invminv
+
+    q_inv = (inv-o) / d
+    q_invminv = int(np.min(q_inv))
+    q_invmaxv = int(np.max(q_inv))
+
+    print(f"d,o=({d},{o})")
+    print(f"inv quantized: ({invminv},{invmaxv}) => ({q_invminv}, {q_invmaxv})")
+    return (d,o)
+
 
 def loadfiles(sprime, datafn, encfn, verbose):
     """Load images and pre computed matrixes."""
@@ -125,51 +152,79 @@ g_h = g_data_shape_orig[2]
 
 g_scalingfactor = getscalingfactorfp16(g_invenc)
 
+(g_quantized_d, g_quantized_o) = getquantized(g_invenc)
+
 
 def evaluatePCA(d, rem, iem, sprime, dataprec, invprec):
     data = np.array([d]).astype(dataprec)
-    invsprime = iem[:, :sprime].astype(invprec)
-    # print(f"{data.shape} {invsprime.shape}")
+    invsprime = iem.astype(invprec)
+
     weighting_matrix = np.matmul(data, invsprime)
+
     # recovery always back to float64
     data_approx = np.matmul(weighting_matrix, rem, dtype=np.float64)
     data_approx = np.clip(data_approx, 0, np.inf)
 
     mse = np.sum((data - data_approx)**2) / (data.shape[1])
-
     return (mse, data - data_approx)
 
-def evaluatePCA_scaling(d, rem, iem, sprime, dataprec, invprec, scaling=1):
+def evaluatePCA_scaling(d, rem, iem, sprime, dataprec, invprec, scaling=1.0):
     data = np.array([d]).astype(dataprec)
-    tmp = iem[:, :sprime] * scaling
-    #print(np.max(np.abs(tmp)), np.min(np.abs(tmp)))
-    tmp = tmp.astype(invprec)
-    #print(np.max(np.abs(tmp)), np.min(np.abs(tmp)))
-    invsprime = tmp
-    # print(f"{data.shape} {invsprime.shape}")
+    iem = iem * scaling
+    invsprime = iem.astype(invprec)
+
     weighting_matrix = np.matmul(data, invsprime)
     weighting_matrix /= scaling
+
     # recovery always back to float64
     data_approx = np.matmul(weighting_matrix, rem, dtype=np.float64)
     data_approx = np.clip(data_approx, 0, np.inf)
 
-    return np.sum((data - data_approx)**2) / (data.shape[1])
+    mse = np.sum((data - data_approx)**2) / (data.shape[1])
+    return (mse, data - data_approx)
+
+
+def evaluatePCA_mixed(d, rem, iem, sprime, dataprec, invprec, redprec, qd, qo):
+    data = np.array([d]).astype(dataprec)
+    # iem = (iem - qo)/qd
+    iem = iem/qd
+    invsprime = iem.astype(invprec)
+
+    #print(f"quantized inv: {np.min(invsprime)}  {np.max(invsprime)}")
+    weighting_matrix = (data * invsprime.T).T #  data, invprec
+    print(f'min max {np.min(weighting_matrix)} {np.max(weighting_matrix)}')
+    weighting_matrix = weighting_matrix.astype(redprec)
+    weighting_matrix = np.sum(weighting_matrix, axis=0)
+    weighting_matrix *= qd
+
+    #data = data.astype('float32')
+    #adj = np.sum(data)*qo/qd
+    #print(f'adj = {adj}')
+    #weighting_matrix +=  adj
+
+    # recovery always back to float64
+    data_approx = np.matmul(weighting_matrix, rem, dtype=np.float64)
+    data_approx = np.clip(data_approx, 0, np.inf)
+
+    mse = np.sum((data - data_approx)**2) / (data.shape[1])
+    return (mse, data - data_approx)
+
 
 def evaluate_pca(data, fstart, fend, sprime, rem, iem, cr, w, h):
     msef64array = []
     msef32array = []
     msef16array = []
-    msef16sarray = []
+    msef16marray = []
     for fno in range(fstart, fend):
         (msef64, recf64) = evaluatePCA(data[fno], rem, iem, sprime, 'float64', 'float64')
         (msef32, recf32) = evaluatePCA(data[fno], rem, iem, sprime, 'float32', 'float32')
         (msef16, recf16) = evaluatePCA(data[fno], rem, iem, sprime, 'float16', 'float16')
-#        msef16s = evaluatePCA_scaling(data[fno], rem, iem, S, 'float16', 'float16', scaling=1000000)
+        (msef16m, recf16m) = evaluatePCA_mixed(data[fno], rem, iem, sprime, 'int16', 'int32', 'float32', g_quantized_d,  g_quantized_o)
         #  print(f'{fno}: {msef64:.3f} {msef32:.3f} {msef16:.3f} {msef16s:.3}')
         msef64array.append(msef64)
         msef32array.append(msef32)
         msef16array.append(msef16)
-        #   msef16sarray.append(msef16s)
+        msef16marray.append(msef16m)
         if (fno == 0):
             def genpng(fn, a):
                 plt.imshow(a)
@@ -180,6 +235,7 @@ def evaluate_pca(data, fstart, fend, sprime, rem, iem, cr, w, h):
             genpng(f's{sprime}-fno{fno}-recf64.png', recf64.reshape(w,h))
             genpng(f's{sprime}-fno{fno}-recf32.png', recf32.reshape(w,h))
             genpng(f's{sprime}-fno{fno}-recf16.png', recf16.reshape(w,h))
+            genpng(f's{sprime}-fno{fno}-recf16m.png', recf16m.reshape(w,h))
 
     print('')
     print(f'[stats]')
@@ -191,10 +247,8 @@ def evaluate_pca(data, fstart, fend, sprime, rem, iem, cr, w, h):
     print_prec_stats(msef64array, 'f64')
     print_prec_stats(msef32array, 'f32')
     print_prec_stats(msef16array, 'f16')
-#    print_prec_stats(msef16sarray, 'f16s')
-
+    print_prec_stats(msef16marray, 'f16m')
 
 evaluate_pca(g_data, g_firstframe, g_lastframe, g_sprime, g_redenc, g_invenc, g_compratio, g_w, g_h)
-
 
 sys.exit(0)
