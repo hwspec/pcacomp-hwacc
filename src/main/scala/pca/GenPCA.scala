@@ -11,6 +11,6 @@ object GenPCA {
        "--split-verilog",
        "-o=generated")
 
-    ChiselStage.emitSystemVerilog(new VMulRed(n=256,nbits_px=8,nbits_iem=8), firtoolOpts = opts) // 5.0.0
+    ChiselStage.emitSystemVerilog(new VMulRed(n=1024,nbits_px=8,nbits_iem=8), firtoolOpts = opts) // 5.0.0
   }
 }
