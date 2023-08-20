@@ -1,16 +1,18 @@
 #!/bin/bash
 
-if [ ! -d hardfloat ] ; then
-	git clone https://github.com/ucb-bar/berkeley-hardfloat.git hardfloat
+if [ ! -d berkeley-hardfloat/hardfloat ] ; then
+	git clone https://github.com/ucb-bar/berkeley-hardfloat.git
 fi
 
-if [ ! -d src/main/scala/hardfloat ] ; then
+if [ ! -f src/main/scala/hardfloat/primitives.scala ] ; then
 	echo "Copying hardfloat sources"
 	mkdir -p src/main/scala/hardfloat
-	cp hardfloat/src/main/scala/* src/main/scala/hardfloat/
+	cp berkeley-hardfloat/hardfloat/src/main/scala/* src/main/scala/hardfloat/
 fi
 
-echo "A workaround applied. Once hardfloat is updated for Chisel 5.0.0, use git submodule"
+echo
+echo "Note: A workaround applied. Use hardfloat's sbt once Chisel 5.0 cross build is added"
+echo
 
 exit 0
 
