@@ -17,5 +17,7 @@ jobs:
         uses: coursier/cache-action@v5
       - name: Workaround for hardfloat
         run: sh prephardfloat.sh
+      - name: Install Verilator
+        run: sudo apt-get install -y verilator gcc
       - name: SBT Test
         run: sbt test
