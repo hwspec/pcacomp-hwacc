@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import math as m
 import numpy as np
 import sys, os, time
+import copy
 
 from ctypes import *
 from functools import reduce
@@ -30,15 +31,15 @@ from pcacomp import *
 g_basename='data1small'
 
 g_firstframe=0
-g_lastframe=1
+g_lastframe=3
 g_sprime = 25 # 3000
 g_verbose = False #
-g_nbits = 8  # nbits for quantized inv. enc. mat.
+g_nbits = 7  # nbits for quantized inv. enc. mat. without signbit # double check
 
 if len(sys.argv) > 1:
     g_sprime = int(sys.argv[1])
 if len(sys.argv) > 2:
-    g_nbits = int(sys.argv[2])
+    g_nbits = int(sys.argv[2]) - 1  # -1 because g_nbits doesn't include the sign bit
 if len(sys.argv) > 3:
     g_basename = sys.argv[3]
 
@@ -71,13 +72,15 @@ def evaluate_pca(data, fstart, fend, sprime, rem, iem, cr, w, h, nbits):
     msef16array = []
     msef16marray = []
     mseqvarray = []
+    iemcopy = copy.deepcopy(iem)
     for fno in range(fstart, fend):
+        iem = copy.deepcopy(iemcopy) # hate. lack of const...
         (msef64, recf64) = evaluatePCA(data[fno], rem, iem, sprime, 'float64', 'float64')
         (msef32, recf32) = evaluatePCA(data[fno], rem, iem, sprime, 'float32', 'float32')
         (msef16, recf16) = evaluatePCA(data[fno], rem, iem, sprime, 'float16', 'float16')
         (msef16m, recf16m) = evaluatePCA_mixed(data[fno], rem, iem, sprime, 'int16', 'int32', 'float32', g_quantized_d)
         (mseqv, recqv) = evaluatePCA_qvec(data[fno], rem, iem, sprime, 'int16', 'int32', 'float32', g_qvec)
-        #  print(f'{fno}: {msef64:.3f} {msef32:.3f} {msef16:.3f} {msef16s:.3}')
+        #print(f'fno{fno}: {msef64:.3f} {msef32:.3f} {msef16:.3f} {msef16m:.3} {mseqv:.3f}')
         msef64array.append(msef64)
         msef32array.append(msef32)
         msef16array.append(msef16)
@@ -97,7 +100,7 @@ def evaluate_pca(data, fstart, fend, sprime, rem, iem, cr, w, h, nbits):
             genpng(f'pngs{sprime}-fno{fno}-recqvec.png', recqv.reshape(w,h))
 
     print('')
-    print(f'[stats] nbits={nbits} mem={nbits*sprime*w*h/8/1024}KB')
+    print(f'[stats] nbits={nbits+1} mem={(nbits+1)*sprime*w*h/8/1024}KB') # +1 because of the sign bit
 
     def print_prec_stats(d, label):
         (tmpmean, tmpstd, tmpminv, tmpmaxv) = basic_stats(d)
@@ -118,17 +121,17 @@ sys.exit(0)
 # unused
 #
 
-def evaluatePCA_scaling(d, rem, iem, sprime, dataprec, invprec, scaling=1.0):
-    data = np.array([d]).astype(dataprec)
-    iem = iem * scaling
-    invsprime = iem.astype(invprec)
-
-    weighting_matrix = np.matmul(data, invsprime)
-    weighting_matrix /= scaling
-
-    # recovery always back to float64
-    data_approx = np.matmul(weighting_matrix, rem, dtype=np.float64)
-    data_approx = np.clip(data_approx, 0, np.inf)
-
-    mse = np.sum((data - data_approx)**2) / (data.shape[1])
-    return (mse, data - data_approx)
+#def evaluatePCA_scaling(d, rem, iem, sprime, dataprec, invprec, scaling=1.0):
+#    data = np.array([d]).astype(dataprec)
+#    iem = iem * scaling
+#    invsprime = iem.astype(invprec)
+#
+#    weighting_matrix = np.matmul(data, invsprime)
+#    weighting_matrix /= scaling
+#
+#    # recovery always back to float64
+#    data_approx = np.matmul(weighting_matrix, rem, dtype=np.float64)
+#    data_approx = np.clip(data_approx, 0, np.inf)
+#
+#    mse = np.sum((data - data_approx)**2) / (data.shape[1])
+#    return (mse, data - data_approx)

@@ -52,7 +52,7 @@ def getquantizationfactor(inv, nbits=12):
     q_invminv = int(np.min(q_inv))
     q_invmaxv = int(np.max(q_inv))
 
-    print(f"inv{inv.shape} quantization ({invminv},{invmaxv}) => ({q_invminv}, {q_invmaxv}) d={d} nbits={nbits}")
+    #print(f"inv{inv.shape} quantization ({invminv},{invmaxv}) => ({q_invminv}, {q_invmaxv}) d={d} nbits={nbits}")
     return d
 
 
