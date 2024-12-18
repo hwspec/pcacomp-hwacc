@@ -1,11 +1,15 @@
 package pca
 
 import chiseltest._
-import org.scalatest.flatspec.AnyFlatSpec
 import scala.util.Random
-import org.scalatest.tools.Runner
 
-class VMulRedSpec extends AnyFlatSpec with ChiselScalatestTester {
+//import org.scalatest.flatspec.AnyFlatSpec
+//import org.scalatest.tools.Runner
+
+import common.CommonSpecConfig
+
+class VMulRedSpec extends CommonSpecConfig {
+// extends AnyFlatSpec with ChiselScalatestTester {
   behavior of "VMulRed"
 
   val npx = 128*8
@@ -33,7 +37,7 @@ class VMulRedSpec extends AnyFlatSpec with ChiselScalatestTester {
   def testLoop(inpx: List[BigInt], iniem: List[BigInt]) : Unit = {
     val ref = calmulredref(inpx, iniem)
     test(new VMulRed(n=npx, nbits_px=nbits_px, nbits_iem=nbits_iem))
-    .withAnnotations(Seq(VerilatorBackendAnnotation))
+    //.withAnnotations(Seq(VerilatorBackendAnnotation))
     { c =>
       inpx.zip(iniem).zipWithIndex.foreach { case ((px, iem), idx) =>
         c.io.in_px(idx).poke(px)

@@ -24,8 +24,6 @@ class VMulRed(n: Int = 4, nbits_px: Int = 8, nbits_iem: Int = 8) extends Module 
   io.out := mulres.reduce(_ + _)
 }
 
-
-
 object VMulRed extends App {
   val n=256
   val nbits_px=8
