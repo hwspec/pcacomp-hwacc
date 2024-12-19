@@ -2,14 +2,9 @@ package pca
 
 import chiseltest._
 import scala.util.Random
-
-//import org.scalatest.flatspec.AnyFlatSpec
-//import org.scalatest.tools.Runner
-
 import common.CommonSpecConfig
 
 class VMulRedSpec extends CommonSpecConfig {
-// extends AnyFlatSpec with ChiselScalatestTester {
   behavior of "VMulRed"
 
   val npx = 128*8

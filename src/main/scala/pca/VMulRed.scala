@@ -8,7 +8,7 @@ import common.GenVerilog
 class VMulRed(n: Int = 4, nbits_px: Int = 8, nbits_iem: Int = 8) extends Module {
   require(n>=4 && (n&(n-1))==0) // check see if n is a power of two number that is larger than 4
 
-  override def desiredName = s"VMulRed_n${n}_px${nbits_px}_iem${nbits_iem}"
+  // override def desiredName = s"VMulRed_n${n}_px${nbits_px}_iem${nbits_iem}"
 
   val nbits_mul = (nbits_px + nbits_iem)
   val nreds = log2Ceil(n)
