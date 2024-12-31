@@ -5,17 +5,51 @@ import chisel3.util._
 import common.GenVerilog
 
 //
-// parameters for the new design
+// design parameters for PCA-based compressor
+//
 // * input images
+// pxbw: pixel bit width (unsigned int)
 // width : the input image width
 // height : its height
-// pxbw: pixel bit width (unsigned int)
 // ngroups: shift groups
+// nblocks: the number of sub-PCA blocks
+//
 // * pca
 // encsize : the maximum encoding size
 // encbw : encoding bit width (signed int)
 // qfactors: quantization factor (vector) needed on chip?
 //
+class PCACompTop(
+                // pixel-sensor params
+                pxbw: Int = 12, width: Int = 256, height: Int = 256,
+                ngroups: Int = 16,
+                nblocks: Int = 8, // the number of sub-PCA blocks
+                // PCA params
+                encsize: Int = 30, // the maximum encoding size
+                encbw : Int = 8 // encoding bit width (signed int)
+                ) extends Module {
+
+}
+
+object PCACompTop extends App {
+  val pxbw: Int = 12
+  val width: Int = 256
+  val height: Int = 256
+  val ngroups: Int = 16
+  val nblocks: Int = 8
+  val encsize: Int = 30
+  val encbw : Int = 8
+
+  GenVerilog.generate(new PCACompTop(
+    pxbw = pxbw,
+    width = width,
+    height = height,
+    ngroups = ngroups,
+    nblocks = nblocks,
+    encsize = encsize,
+    encbw = encbw
+  ))
+}
 
 class PCAComp(ninpixels: Int = 256, ncolumns : Int = 16, pxbw: Int = 8, maxenc: Int = 30, encbw: Int = 8 ) extends Module {
   val io = IO(new Bundle {
