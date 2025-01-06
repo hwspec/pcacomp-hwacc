@@ -36,11 +36,9 @@ class PCACompBlock(
     val encdata = Input(Vec(nbanks, Vec(encsize, SInt(encbw.W))))
     val encdataverify = Output(Vec(nbanks, Vec(encsize, SInt(encbw.W))))
   })
-
-  io.in.ready := false.B
-  io.out.valid := false.B
   for (i <- 0 until encsize) io.out.bits(i) := 0.S
 
+  // encoding matrix
   val encmat = Seq.fill(nbanks) {SyncReadMem(npixelgroups, Vec(encsize, SInt(encbw.W)))}
   when (io.setencdata) {
     for (b <- 0 until nbanks) {
@@ -56,6 +54,41 @@ class PCACompBlock(
       for (i <- 0 until encsize) {
         io.encdataverify(b)(i) := 0.S
       }
+    }
+  }
+
+  //
+  object PCACompState extends ChiselEnum {
+    val Idle, InProcessing, Done = Value
+  }
+  import PCACompState._
+
+  val stateReg = RegInit(Idle)
+
+  val pixelReg = RegInit(VecInit(Seq.fill(ninpixels)(0.U(pxbw.W))))
+  val resReg = RegInit(VecInit(Seq.fill(encsize)(0.S(encbw.W))))
+
+  io.in.ready := false.B
+  io.out.valid := false.B
+
+  switch(stateReg) {
+    is(Idle) {
+      io.in.ready := true.B
+      when(io.in.valid) {
+        for (i <- 0 until ninpixels) {
+          pixelReg(i) := io.in.bits(i)
+        }
+        for (i <- 0 until encsize) {
+          resReg(i) := 0.S
+        }
+        stateReg := InProcessing
+      }
+    }
+    is(InProcessing) {
+      stateReg := Done
+    }
+    is(Done) {
+      stateReg := Idle
     }
   }
 }
