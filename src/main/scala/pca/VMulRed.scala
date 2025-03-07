@@ -62,7 +62,8 @@ class LocalRedBuiltIn(n: Int = 4, inbw: Int = 8) extends Module {
     val in = Input(Vec(n, SInt(inbw.W)))
     val out = Output(SInt(outbw.W))
   })
-  io.out := io.in.reduce(_ +& _)
+
+  io.out := io.in.reduce(_ +& _) // the +& operation does extend the bit width?
 }
 
 object LocalRed extends App {
