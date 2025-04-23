@@ -131,7 +131,8 @@ def evaluatePCA(d, rem, iem, sprime, dataprec, invprec):
     data_approx = np.clip(data_approx, 0, np.inf)
 
     mse = np.sum((data - data_approx)**2) / (data.shape[1])
-    return (mse, data - data_approx)
+    #return (mse, data - data_approx)
+    return (mse,  data_approx, data - data_approx)
 
 def evaluatePCA_mixed(d, rem, iem, sprime, dataprec, invprec, redprec, qd):
     data = np.array([d]).astype(dataprec)
@@ -153,7 +154,7 @@ def evaluatePCA_mixed(d, rem, iem, sprime, dataprec, invprec, redprec, qd):
     data_approx = np.clip(data_approx, 0, np.inf)
 
     mse = np.sum((data - data_approx)**2) / (data.shape[1])
-    return (mse, data - data_approx)
+    return (mse, data_approx, data - data_approx)
 
 
 def evaluatePCA_qvec(d, rem, iem, sprime, dataprec, invprec, redprec, qv):
@@ -183,7 +184,7 @@ def evaluatePCA_qvec(d, rem, iem, sprime, dataprec, invprec, redprec, qv):
     data_approx = np.clip(data_approx, 0, np.inf)
 
     mse = np.sum((data - data_approx)**2) / (data.shape[1])
-    return (mse, data - data_approx)
+    return (mse, data_approx, data - data_approx)
 
 
 def save_sintdata(fn, data):

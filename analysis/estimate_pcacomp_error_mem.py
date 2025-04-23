@@ -73,11 +73,11 @@ def evaluate_pca(data, fstart, fend, sprime, rem, iem, cr, w, h, nbits):
     msef16marray = []
     mseqvarray = []
     for fno in range(fstart, fend):
-        (msef64, recf64) = evaluatePCA(data[fno], rem, iem, sprime, 'float64', 'float64')
-        (msef32, recf32) = evaluatePCA(data[fno], rem, iem, sprime, 'float32', 'float32')
-        (msef16, recf16) = evaluatePCA(data[fno], rem, iem, sprime, 'float16', 'float16')
-        (msef16m, recf16m) = evaluatePCA_mixed(data[fno], rem, iem, sprime, 'int16', 'int32', 'float32', g_quantized_d)
-        (mseqv, recqv) = evaluatePCA_qvec(data[fno], rem, iem, sprime, 'int16', 'int32', 'float32', g_qvec)
+        (msef64, recf64, difff64) = evaluatePCA(data[fno], rem, iem, sprime, 'float64', 'float64')
+        (msef32, recf32, difff32) = evaluatePCA(data[fno], rem, iem, sprime, 'float32', 'float32')
+        (msef16, recf16, difff16) = evaluatePCA(data[fno], rem, iem, sprime, 'float16', 'float16')
+        (msef16m, recf16m, difff16m ) = evaluatePCA_mixed(data[fno], rem, iem, sprime, 'int16', 'int32', 'float32', g_quantized_d)
+        (mseqv, recqv, diffqv) = evaluatePCA_qvec(data[fno], rem, iem, sprime, 'int16', 'int32', 'float32', g_qvec)
         #print(f'fno{fno}: {msef64:.3f} {msef32:.3f} {msef16:.3f} {msef16m:.3} {mseqv:.3f}')
         msef64array.append(msef64)
         msef32array.append(msef32)
@@ -95,7 +95,7 @@ def evaluate_pca(data, fstart, fend, sprime, rem, iem, cr, w, h, nbits):
             genpng(f'png/s{sprime}-fno{fno}-recf32.png', recf32.reshape(w,h))
             genpng(f'png/s{sprime}-fno{fno}-recf16.png', recf16.reshape(w,h))
             genpng(f'png/s{sprime}-fno{fno}-recf16m.png', recf16m.reshape(w,h))
-            genpng(f'pngs{sprime}-fno{fno}-recqvec.png', recqv.reshape(w,h))
+            genpng(f'png/s{sprime}-fno{fno}-recqvec.png', recqv.reshape(w,h))
 
     print('')
     print(f'[stats] nbits={nbits+1} mem={(nbits+1)*sprime*w*h/8/1024}KB') # +1 because of the sign bit
@@ -107,7 +107,7 @@ def evaluate_pca(data, fstart, fend, sprime, rem, iem, cr, w, h, nbits):
     print(f"dtype sprime cratio    mean    stddiv    min    max")
     print_prec_stats(msef64array, 'f64')
     print_prec_stats(msef32array, 'f32')
-#    print_prec_stats(msef16array, 'f16')
+    print_prec_stats(msef16array, 'f16')
     print_prec_stats(msef16marray, 'int')
     print_prec_stats(mseqvarray,   'int_quantized')
 
