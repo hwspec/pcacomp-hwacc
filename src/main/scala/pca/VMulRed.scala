@@ -69,8 +69,7 @@ class LocalRedBuiltIn(n: Int = 4, inbw: Int = 8) extends Module {
 object LocalRed extends App {
   val bw = 8
 
-//  List(64, 128, 256, 512, 1024).foreach { n =>
-    List(16).foreach { n =>
+  List(4, 8, 16, 32, 64, 128).foreach { n =>
     GenVerilog.generate(new LocalRedRec(n, bw))
     GenVerilog.generate(new LocalRedBuiltIn(n, bw))
   }

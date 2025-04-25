@@ -98,20 +98,21 @@ def evaluate_pca(data, fstart, fend, sprime, rem, iem, cr, w, h, nbits):
             genpng(f'png/s{sprime}-fno{fno}-recqvec.png', recqv.reshape(w,h))
 
     print('')
-    print(f'[stats] nbits={nbits+1} mem={(nbits+1)*sprime*w*h/8/1024}KB') # +1 because of the sign bit
+    print(f'[stats] w={g_w} h={g_h} nbits={nbits+1} mem={(nbits+1)*sprime*w*h/8/1024}KB') # +1 because of the sign bit
 
     def print_prec_stats(d, label):
         (tmpmean, tmpstd, tmpminv, tmpmaxv) = basic_stats(d)
         print(f"{label:13s} {sprime:6d} {cr:8.1f}  {tmpmean:.4f} {tmpstd:.4f} {tmpminv:.4f} {tmpmaxv:.4f}")
 
-    print(f"dtype sprime cratio    mean    stddiv    min    max")
-    print_prec_stats(msef64array, 'f64')
-    print_prec_stats(msef32array, 'f32')
-    print_prec_stats(msef16array, 'f16')
-    print_prec_stats(msef16marray, 'int')
-    print_prec_stats(mseqvarray,   'int_quantized')
+    print(f"dtype             sprime cratio  mean  stddiv   min   max  # RSME ")
+    print_prec_stats(np.sqrt(msef64array),  'f64')
+    print_prec_stats(np.sqrt(msef32array),  'f32')
+    print_prec_stats(np.sqrt(msef16array),  'f16')
+    print_prec_stats(np.sqrt(msef16marray), 'int')
+    print_prec_stats(np.sqrt(mseqvarray),   'int_quantized')
 
 evaluate_pca(g_data, g_firstframe, g_lastframe, g_sprime, g_redenc, g_invenc, g_compratio, g_w, g_h, g_nbits)
+
 
 sys.exit(0)
 
