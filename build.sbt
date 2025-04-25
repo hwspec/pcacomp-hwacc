@@ -1,13 +1,11 @@
 // See README.md for license details.
 
 ThisBuild / scalaVersion     := "2.13.12"
-ThisBuild / version          := "0.2.0"
+ThisBuild / version          := "0.3.0"
 ThisBuild / organization     := "com.github.kazutomo"
 ThisBuild / logLevel := Level.Warn
 
-val chiselVersion = "6.4.0"
-
-
+val chiselVersion = "6.7.0"
 
 lazy val root = (project in file("."))
   .settings(
@@ -23,7 +21,6 @@ lazy val root = (project in file("."))
       "-feature",
       "-Xcheckinit",
       "-Ymacro-annotations",
-      "-P:chiselplugin:genBundleElements",
     ),
     addCompilerPlugin("org.chipsalliance" % "chisel-plugin" % chiselVersion cross CrossVersion.full),
   )

@@ -13,10 +13,19 @@ cat <<EOF > tmp.ys
 read -sv $FN
 hierarchy -top $TOP
 proc
+memory
+flatten
 opt
-techmap; opt
+stat
+techmap -map +/techmap.v -D NO_DIV -D NO_EXPAND
+opt
 stat
 EOF
+
+#techmap
+#opt
+#stat
+
 
 yosys tmp.ys
 

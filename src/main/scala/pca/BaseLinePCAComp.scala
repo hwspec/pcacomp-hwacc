@@ -9,6 +9,25 @@ import common.GenVerilog
 // It uses registers, instead of SRAM, to store the inversed encoding matrix
 // No pipelining
 
+class PCData(width: Int = 16, height: Int = 16,
+             iembw: Int = 8, debugprint: Boolean = true
+            ) extends Module {
+  val ninpixels = (width * height)
+
+  val io = IO(new Bundle {
+    val update = Input(Bool())
+    val in = Input(Vec(ninpixels, SInt(iembw.W)))
+    val out = Output(Vec(ninpixels, SInt(iembw.W)))
+  })
+  // single principal component
+  val pc = RegInit(VecInit(Seq.fill(ninpixels)(0.S(iembw.W))))
+
+  when(io.update) {
+    pc := io.in
+  }
+  io.out := pc
+}
+
 class BaseLinePCAComp(
                        pxbw: Int = 10, width: Int = 16, height: Int = 16,
                        iemsize: Int = 50, iembw: Int = 8, // iem: inversed encoding matrix
@@ -30,36 +49,53 @@ class BaseLinePCAComp(
 
     // setup the inversed encoding matrix
     val updateIEM     = Input(Bool()) // load imedata into mem
-    val verifyIEM       = Input(Bool()) // read mem for verification
+    val verifyIEM     = Input(Bool()) // read mem for verification
     val iempos        = Input(UInt(log2Ceil(iemsize).W))
     val iemdata       = Input(Vec(ninpixels, SInt(iembw.W)))
     val iemdataverify = Output(Vec(ninpixels, SInt(iembw.W)))
   })
 
-  // val iemmats = Seq.fill(iemsize)(SyncReadMem(ninpixels, SInt(iembw.W)))
-  val iemmats = VecInit(Seq.fill(iemsize)(
-    RegInit(VecInit(Seq.fill(ninpixels)(0.S(iembw.W))))
-  ))
 
-  iemmats.foreach(row => row.foreach(dontTouch(_)))
+  // iemmats.foreach(row => row.foreach(dontTouch(_)))
+//  val iemmats = VecInit(Seq.fill(iemsize)(
+//        RegInit(VecInit(Seq.fill(ninpixels)(0.S(iembw.W))))
+//  ))
+
+
+  val iemmats = Seq.fill(iemsize)(Module(new PCData(
+    width, height, iembw, debugprint)))
+
+
+
+  val zeroVec = VecInit(Seq.fill(ninpixels)(0.S(iembw.W)))
+  for (i <- 0 until iemsize) {
+    iemmats(i).io.in := zeroVec
+    iemmats(i).io.update := false.B
+  }
 
   io.iemdataverify.foreach { e => e := 0.S }
   io.out.valid := false.B
 
+  val clk = RegInit(0.U(5.W))
+  clk := clk + 1.U
+  printf("clk%d iemmats(0)(0)=%d\n", clk, iemmats(0).io.out(0))
+
   when(io.updateIEM) {
     for(memid <- 0 until iemsize) {
       when(io.iempos === memid.U) {
-        for(i <- 0 until ninpixels) {
-          iemmats(memid)(i) := io.iemdata(i)
-        }
+        iemmats(memid).io.update := true.B
+        iemmats(memid).io.in := io.iemdata
+        if(debugprint) printf("clk%d memid%d indata(0)=%d\n", clk, memid.U, io.iemdata(0))
       }
     }
-  }.elsewhen(io.verifyIEM) {
+  }
+
+  when(io.verifyIEM) {
     for(memid <- 0 until iemsize) {
       when(io.iempos === memid.U) {
-        for(i <- 0 until ninpixels) {
-          io.iemdataverify(i) := iemmats(memid)(i)
-        }
+        io.iemdataverify := iemmats(memid).io.out
+        if(debugprint) printf("verify: memid%d regdata(0)=%d\n", memid.U,
+          iemmats(memid).io.out(0))
       }
     }
   }
@@ -77,37 +113,36 @@ class BaseLinePCAComp(
   val multiplied = Wire(Vec(ninpixels, SInt(mulbw.W)))
   multiplied.foreach { e => e := 0.S }
 
-  red.io.in := multiplied
-
   io.in.ready := !inProcessing
 
-  when(io.in.valid && !inProcessing) {
-    // initialize
-    processingPos := 0.U
-    for(i <- 0 until iemsize) { compdataReg(i) := 0.S }
+  for(iempos <- 0 until iemsize) {
+    when(processingPos === iempos.U) {
+      for (i <- 0 until ninpixels) {
+        multiplied(i) := io.in.bits(i) * iemmats(iempos).io.out(i)
+      }
+    }
+  }
 
-    inpixelsReg := io.in.bits
+  red.io.in := multiplied
+
+  when(io.in.valid && !inProcessing) {
+    inpixelsReg := io.in.bits // keep for the next cycle
 
     // the first principal component
-    for(i <- 0 until ninpixels) {
-      multiplied(i) := io.in.bits(i) * iemmats(processingPos)(i)
-    }
     compdataReg(processingPos) := red.io.out
 
-    inProcessing := true.B
+    processingPos := 1.U
 
-    processingPos := processingPos + 1.U
+    inProcessing := true.B
   }
 
   when(inProcessing) {
     when(processingPos === io.npc) {
       inProcessing := false.B
+      io.out.valid := true.B
     }
 
     // the second principal component or later
-    for(i <- 0 until ninpixels) {
-      multiplied(i) := inpixelsReg(i) * iemmats(processingPos)(i)
-    }
     compdataReg(processingPos) := red.io.out
 
     processingPos := processingPos + 1.U
@@ -116,7 +151,7 @@ class BaseLinePCAComp(
 
 class BaseLinePCACompWrapper(
   pxbw: Int = 10, width: Int = 16, height: Int = 16,
-  iemsize: Int = 50, iembw: Int = 8, debugprint: Boolean = true
+  iemsize: Int = 20, iembw: Int = 8, debugprint: Boolean = true
 ) extends Module {
 
   val ninpixels = width * height
@@ -160,8 +195,8 @@ object BaseLinePCAComp extends App {
 
   Seq(4,8, 16, 32).foreach { len =>
     GenVerilog.generate(new BaseLinePCAComp(
-      pxbw = 10, width = len, height = len,
-      iemsize = 50, iembw = 8,
+      pxbw = 9, width = len, height = len,
+      iemsize = 1, iembw = 8,
       debugprint = true
     ))
   }

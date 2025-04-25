@@ -125,11 +125,9 @@ def evaluatePCA(d, rem, iem, sprime, dataprec, invprec):
     invsprime = iem.astype(invprec)
 
     weighting_matrix = np.matmul(data, invsprime)
-
     # recovery always back to float64
     data_approx = np.matmul(weighting_matrix, rem, dtype=np.float64)
     data_approx = np.clip(data_approx, 0, np.inf)
-
     mse = np.sum((data - data_approx)**2) / (data.shape[1])
     #return (mse, data - data_approx)
     return (mse,  data_approx, data - data_approx)
@@ -167,8 +165,6 @@ def evaluatePCA_qvec(d, rem, iem, sprime, dataprec, invprec, redprec, qv):
 
     invsprime = iemcopy.astype(invprec)
 
-    #print(f"quantized inv: {np.min(invsprime)}  {np.max(invsprime)}")
-
     # element-wise matrix multiply
     weighting_matrix = (data * invsprime.T).T #  data, invprec
     #print(f'min max {np.min(weighting_matrix)} {np.max(weighting_matrix)}')
@@ -176,13 +172,20 @@ def evaluatePCA_qvec(d, rem, iem, sprime, dataprec, invprec, redprec, qv):
     # reduction in higher precision
     weighting_matrix = np.sum(weighting_matrix, axis=0)
 
+    if False:
+        print()
+        print(f"data: {np.min(d)} {np.max(d)}")
+        print(f"quantized inv: {np.min(invsprime)}  {np.max(invsprime)}")
+        print(f"compdata: {np.min(weighting_matrix)}  {np.max(weighting_matrix)}")
+
     for s in range(0, sprime):
         weighting_matrix[s] *= qv[s]
-
     # recovery always back to float64
     data_approx = np.matmul(weighting_matrix, rem, dtype=np.float64)
     data_approx = np.clip(data_approx, 0, np.inf)
 
+    if False:
+        print(f"approx: {np.min(data_approx)}  {np.max(data_approx)}")
     mse = np.sum((data - data_approx)**2) / (data.shape[1])
     return (mse, data_approx, data - data_approx)
 
