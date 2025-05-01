@@ -6,15 +6,19 @@ import chisel3.simulator.VCDHackedEphemeralSimulator._
 import scala.util.Random
 import org.scalatest.flatspec.AnyFlatSpec
 
-class PCARef(N: Int, M: Int, PXBW: Int, IEMBW: Int) {
+class PCARef(N: Int, M: Int, PXBW: Int, IEMBW: Int, seed: Option[Long] = Some(11L)) {
+  private val rng = seed match {
+    case Some(seed) => new scala.util.Random(seed)
+    case None       => new scala.util.Random()
+  }
 
   val maxUnsigned = (1 << PXBW) - 1
-  val row = Array.fill(N)(Random.nextInt(maxUnsigned + 1))
+  val row = Array.fill(N)(rng.nextInt(maxUnsigned + 1))
 
   val minSigned = -(1 << (IEMBW - 1))
   val maxSigned = (1 << (IEMBW - 1)) - 1
   // Note: transposed for easier principal component access
-  val matrix = Array.fill(M, N)(Random.between(minSigned, maxSigned + 1))
+  val matrix = Array.fill(M, N)(rng.between(minSigned, maxSigned + 1))
 
   def rowVectorMatrixProduct(): Array[Int] = {
     require(row.length == matrix(0).length, "Row-vector length must match number of matrix rows")
@@ -107,7 +111,7 @@ class BaseLinePCACompSpec extends AnyFlatSpec {
     simulate(new BaseLinePCAComp(
       pxbw = PXBW, width = W, height = H,
       iemsize = M, iembw = IEMBW,
-      debugprint = false)) { dut =>
+      debugprint = true)) { dut =>
 
       val pcaref = new PCARef(N, M, PXBW, IEMBW)
 
@@ -115,6 +119,9 @@ class BaseLinePCACompSpec extends AnyFlatSpec {
 
       computeAndCompare(dut, pcaref)
 
+      println("Row Vector: " + pcaref.row.mkString("[", ", ", "]"))
+      println("Matrix:")
+      pcaref.matrix.foreach(row => println(row.mkString("[", ", ", "]")))
       val result = pcaref.rowVectorMatrixProduct()
       println("Result: " + result.mkString("[", ", ", "]"))
     }
