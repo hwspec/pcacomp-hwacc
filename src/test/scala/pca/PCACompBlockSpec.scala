@@ -10,35 +10,35 @@ import chisel3.simulator.EphemeralSimulator._
 /**
  * PCA testdata generation
  *
- * vec : row-vector with the size n. vecbw-bit unsigned integer
- * mat : matrix with n rows and m cols. matbw-bit signed integer
+ * vec : row-vector with the size n.
+ * mat : matrix with n rows and m cols.
  *
- * @param nvecs the number of the input vectors
  * @param n the number of the rows in mat and the length of vec
  * @param m the number of the columns in vec
+ * @param vecbw : the bitwidth of vec element (unsigned integer)
+ * @param matbw : the bitwidth of mat element (signed integer)
+ * @param nblocks : the number of the parallel encoding blocks
+ *
  */
-class PCATestData(val nvecs: Int, val n: Int, val m: Int, vecbw: Int, matbw: Int) {
+class PCATestData(val n: Int = 168, val m: Int = 192, vecbw: Int = 12, matbw: Int = 8, nblocks : Int = 8) {
   val resbw = vecbw + matbw + log2Ceil(n)
   require(resbw < 64)
 
   val rnd = new Random(123)
-
 
   val mat: Array[Array[Long]] = Array.fill(n, m) {
     val tmp = 1 << matbw
     rnd.between(-tmp, tmp)
   }
 
-  val inpvecs: Array[Array[Long]] = Array.fill(nvecs, n) {
+  val vec: Array[Long] = Array.fill(n) {
     rnd.nextInt(1 << vecbw)
   }
 
   val ref: Array[Long] = Array.fill(m)(0.toLong)
-  for (inidx <- 0 until nvecs) {
-    for (encidx <- 0 until m) {
-      ref(encidx) = ref(encidx) +
-        (0 until n).map(j => inpvecs(inidx)(j) * mat(j)(encidx)).sum
-    }
+  for (encidx <- 0 until m) {
+    ref(encidx) = ref(encidx) +
+      (0 until n).map(j => vec(j) * mat(j)(encidx)).sum
   }
 }
 
