@@ -4,18 +4,19 @@ import chisel3._
 import chisel3.util._
 import common.GenVerilog
 
-class PCACompBlock(
-                        // pixel-sensor params. the width and height of a block
-                        val ncols: Int = 192, // the numbers of the pixel-sensor columns
-                        val nrows: Int = 168, // the numbers of the pixel-sensor rows
-                        val pxbw: Int = 12, // pixel bit width
-                        val width: Int = 32, // width for this block. ncols%widht == 0
-                        // PCA params, iem=inverse encoding matrix
-                        val nmaxpcs  : Int = 60, // the max number of principal components
-                        val iembw    : Int = 8, // encoding bit width for int, mantissa bit for float
-                        // other params
+class PCACompBlock(cfg: PCAConfig = PCAConfigPresets.default,
                         debugprint: Boolean = true
                       ) extends Module {
+
+  // pixel-sensor params. the width and height of a block
+  val ncols: Int = cfg.w // the numbers of the pixel-sensor columns
+  val nrows: Int = cfg.h // the numbers of the pixel-sensor rows
+  val pxbw: Int  = cfg.pxbw // pixel bit width
+  val width: Int = cfg.w / cfg.nblocks // width for this block. ncols%widht == 0
+  // PCA params, iem=inverse encoding matrix
+  val nmaxpcs  : Int = cfg.m // the max number of principal components
+  val iembw    : Int = cfg.encbw // encoding bit width for int, mantissa bit for float
+  // other params
 
   require((ncols % width) == 0)
 
