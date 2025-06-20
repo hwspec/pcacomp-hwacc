@@ -102,10 +102,10 @@ def evaluate_pca(data, fstart, fend, sprime, rem, iem, cr, w, h, nbits):
 
     def print_prec_stats(d, label):
         (tmpmean, tmpstd, tmpminv, tmpmaxv) = basic_stats(d)
-        print(f"{label:13s} {sprime:6d} {cr:8.1f}  {tmpmean:.4f} {tmpstd:.4f} {tmpminv:.4f} {tmpmaxv:.4f}")
+        print(f"{label:13s} {sprime:6d}  {tmpmean:.4f} {tmpstd:.4f} {tmpminv:.4f} {tmpmaxv:.4f}") # {cr:8.1f} 
 
-    print(f"dtype             sprime cratio  mean  stddiv   min   max  # RSME ")
-    print_prec_stats(np.sqrt(msef64array),  'f64')
+    print(f"dtype             npcs   mean  stddiv   min   max  # RSME ")
+#    print_prec_stats(np.sqrt(msef64array),  'f64')
     print_prec_stats(np.sqrt(msef32array),  'f32')
     print_prec_stats(np.sqrt(msef16array),  'f16')
     print_prec_stats(np.sqrt(msef16marray), 'int')

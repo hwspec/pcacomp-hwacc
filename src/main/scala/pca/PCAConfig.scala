@@ -11,6 +11,7 @@ case class PCAConfig(val w: Int = 12,  val h : Int = 3, val pxbw: Int = 9,  // p
 
 object PCAConfigPresets {
   val default = PCAConfig()
-  val small = PCAConfig()
+  val small = PCAConfig(h=2, pxbw=5, m=2, seed=Some(123))
+  val medium = PCAConfig(w=192, h=168, m=50, pxbw=12, nblocks=8)
   val large = PCAConfig(w=192, h=168, m=100, pxbw=12, nblocks=8)
 }

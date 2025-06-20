@@ -48,7 +48,8 @@ class PCACompBlock(cfg: PCAConfig = PCAConfigPresets.default,
   val clk = RegInit(0.U(10.W))
   clk := clk + 1.U
 
-  val indatavec = io.indata.asTypeOf(Vec(width, UInt(pxbw.W)))
+  val indataHoldReg = RegInit(0.U((width*pxbw).W))
+  val indatavec = indataHoldReg.asTypeOf(Vec(width, UInt(pxbw.W)))
 
   io.iemdataverify := 0.U
   io.out.bits := 0.U
@@ -90,6 +91,7 @@ class PCACompBlock(cfg: PCAConfig = PCAConfigPresets.default,
     // compute mode
     when(io.indatavalid) {
       dataReceivedStageReg := true.B
+      indataHoldReg := io.indata
     }.otherwise {
       dataReceivedStageReg := false.B
     }
@@ -128,7 +130,7 @@ class PCACompBlock(cfg: PCAConfig = PCAConfigPresets.default,
       for (x <- 0 until width) {
         multiplied(pos)(x) := fromiem(pos)(x) * indatavec(x)
         if(debugprint) {
-          printf("%x*%x, ", fromiem(pos)(x), indatavec(x))
+          printf("%d*%d, ", fromiem(pos)(x), indatavec(x))
         }
       }
       if(debugprint) { printf("\n") }
@@ -141,7 +143,7 @@ class PCACompBlock(cfg: PCAConfig = PCAConfigPresets.default,
       if (debugprint) {
         printf("  pos%d: ", pos.U)
         for (x <- 0 until width) {
-          printf("%x ", multiplied(pos)(x))
+          printf("%d ", multiplied(pos)(x))
         }
         printf("\n")
       }
@@ -189,5 +191,5 @@ class PCACompBlock(cfg: PCAConfig = PCAConfigPresets.default,
 }
 
 object PCACompBlock extends App {
-  GenVerilog(new PCACompBlock(PCAConfigPresets.large))
+  GenVerilog(new PCACompBlock(PCAConfigPresets.medium))
 }

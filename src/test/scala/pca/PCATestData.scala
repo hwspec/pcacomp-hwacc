@@ -33,6 +33,7 @@ class PCATestData(val cfg: PCAConfig = PCAConfigPresets.default) {
   val mat: Array[Array[Long]] = Array.fill(cfg.m, n) {
     val tmp = 1 << (cfg.encbw-1)
     rnd.between(-tmp, tmp)
+    // rnd.between(0, tmp)
   }
 
   val ref: Array[Long] = Array.fill(cfg.m)(0.toLong)
