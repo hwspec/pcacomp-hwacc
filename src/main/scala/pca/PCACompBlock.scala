@@ -205,3 +205,7 @@ object PCACompBlockMedium extends App {
 object PCACompBlockLarge extends App {
   GenVerilog(new PCACompBlock(PCAConfigPresets.large))
 }
+
+object PCACompBlockCfg1 extends App {
+  GenVerilog(new PCACompBlock(PCAConfigPresets.cfg1))
+}

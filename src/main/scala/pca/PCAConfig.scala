@@ -14,4 +14,6 @@ object PCAConfigPresets {
   val small = PCAConfig(h=2, pxbw=5, m=2, seed=Some(123))
   val medium = PCAConfig(w=192, h=168, m=50, pxbw=12, nblocks=8)
   val large = PCAConfig(w=192, h=168, m=100, pxbw=12, nblocks=8)
+  //
+  val cfg1 = PCAConfig(w=24, h=24, pxbw=12, m=25, nblocks = 4)
 }
