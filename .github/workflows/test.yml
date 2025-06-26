@@ -30,8 +30,8 @@ jobs:
       - name: Setup Dependencies
         run: |
           sudo apt-get install ccache
-      - name: Workaround for hardfloat
-        run: sh prephardfloat.sh
+#      - name: Workaround for hardfloat
+#        run: sh prephardfloat.sh
       - name: Get Cached Verilator
         id: get-cached-verilator
         uses: actions/cache@v4
