@@ -209,3 +209,17 @@ object PCACompBlockLarge extends App {
 object PCACompBlockCfg1 extends App {
   GenVerilog(new PCACompBlock(PCAConfigPresets.cfg1))
 }
+
+import play.api.libs.json._
+import scala.io.Source
+
+object PCACompBlockJson extends App {
+  val cfgfn = sys.env.getOrElse("PCAConfig", "default")
+
+  if(cfgfn == "default") {
+    GenVerilog(new PCACompBlock(PCAConfigPresets.cfg1))
+  } else {
+    println(cfgfn)
+    val src = Source.fromFile(cfgfn)
+  }
+}
