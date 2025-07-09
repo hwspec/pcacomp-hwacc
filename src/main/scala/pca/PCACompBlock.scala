@@ -5,8 +5,9 @@ import chisel3.util._
 import common.GenVerilog
 
 class PCACompBlock(cfg: PCAConfig = PCAConfigPresets.default,
-                        debugprint: Boolean = true
-                      ) extends Module {
+                   useSyncReadMem : Boolean = true,
+                   debugprint: Boolean = true
+                  ) extends Module {
 
   // pixel-sensor params. the width and height of a block
   val ncols: Int = cfg.w // the numbers of the pixel-sensor columns
@@ -61,6 +62,15 @@ class PCACompBlock(cfg: PCAConfig = PCAConfigPresets.default,
 
   val mems = Seq.fill(nmaxpcs)(SyncReadMem(nrows, UInt(busbw.W)))
 
+//  val mems = Seq.tabulate(nmaxpcs) { id =>
+//    Module(new SRAM1RW(nrows, busbw, useSyncReadMem)) }
+//  for(i <- 0 until nmaxpcs) {
+//    mems(i).io.en := true.B
+//    mems(i).io.we := true.B
+//    mems(i).io.addr := 0.U
+//    mems(i).io.wdata := 0.U
+//  } // enable for now
+
   val memaddr  = Wire(UInt(log2Ceil(nrows).W))
   val memrdata = Wire(Vec(nmaxpcs, UInt(busbw.W)))
 
@@ -70,8 +80,11 @@ class PCACompBlock(cfg: PCAConfig = PCAConfigPresets.default,
 
   memaddr := io.rowid
   for(i <- 0 until nmaxpcs) {
-    memrdata(i) := mems(i).read(memaddr, true.B)
-//    when(io.verifyIEM) {
+    memrdata(i) := mems(i).read(memaddr, true.B)  // SyncReadMem
+//    mems(i).io.addr := memaddr
+//    memrdata(i) := mems(i).io.rdata // assume synchronous behavior
+
+    //    when(io.verifyIEM) {
 //      if (debugprint) {
 //        printf("read iem%d : data=%d / readaddr=%d\n", i.U, memrdata(i), io.rowpos)
 //      }
@@ -83,7 +96,11 @@ class PCACompBlock(cfg: PCAConfig = PCAConfigPresets.default,
   when(io.updateIEM) {
     for(i <- 0 until nmaxpcs) {
       when(io.iempos === i.U) {
-        mems(i).write(io.rowid, io.iemdata /*.asTypeOf(UInt(busbw.W)) */ )
+        mems(i).write(io.rowid, io.iemdata ) // SyncReadMem
+//        mems(i).io.we := true.B
+//        mems(i).io.addr := io.rowid
+//        mems(i).io.wdata := io.iemdata
+
 //        if(debugprint) printf("update: iempos=%d rowpos=%d data=%d\n",
 //          i.U, io.rowpos, io.iemdata)
       }
