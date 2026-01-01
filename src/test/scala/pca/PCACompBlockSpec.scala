@@ -2,7 +2,7 @@ package pca
 
 import org.scalatest.flatspec.AnyFlatSpec
 import chisel3.simulator.EphemeralSimulator._
-//import chisel3.simulator.ChiselSim  // for 7.0 or later
+//import chisel3.simulator.scalatest.ChiselSim  // for 7.0 or later
 import scala.collection.mutable.ArrayBuffer
 
 class PCACompBlockSpec extends AnyFlatSpec {

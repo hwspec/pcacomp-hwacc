@@ -1,7 +1,6 @@
 package pca
 
 import chisel3.util._
-
 import scala.util.Random
 
 /**

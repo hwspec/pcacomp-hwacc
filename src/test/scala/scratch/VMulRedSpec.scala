@@ -1,11 +1,12 @@
 package scratch
 
-import chiseltest._
-import common.CommonSpecConfig
+import chisel3.simulator.EphemeralSimulator._
+//import chisel3.simulator.scalatest.ChiselSim
+import org.scalatest.flatspec.AnyFlatSpec
 
 import scala.util.Random
 
-class CompareRedSpec extends CommonSpecConfig {
+class CompareRedSpec extends AnyFlatSpec  {
   behavior of "CompareRed"
 
   val n = 4
@@ -16,13 +17,13 @@ class CompareRedSpec extends CommonSpecConfig {
   }
 
   "basic test" should "pass" in {
-    test(new CompareRed(n, inbw)) { dut =>
+    simulate(new CompareRed(n, inbw)) { dut =>
       val ref = testdata.reduce(_ + _)
       testdata.zipWithIndex.foreach{ case(v,idx) =>
         dut.io.in(idx).poke(v)
       }
-      val o1 = dut.io.out1.peekInt()
-      val o2 = dut.io.out2.peekInt()
+      val o1 : BigInt = dut.io.out1.peek().litValue
+      val o2 : BigInt = dut.io.out2.peek().litValue
       println(s"$o1 $o2 $ref")
       assert(o1 == ref, s"o1:${o1} did not match with ref:${ref}")
       assert(o1 == o2, s"o1:${o1} did not match with o2:${o2}")
@@ -31,7 +32,7 @@ class CompareRedSpec extends CommonSpecConfig {
 }
 
 
-class VMulRedSpec extends CommonSpecConfig {
+class VMulRedSpec extends AnyFlatSpec {
   behavior of "VMulRed"
 
   val npx = 128*8
@@ -58,14 +59,14 @@ class VMulRedSpec extends CommonSpecConfig {
 
   def testLoop(inpx: List[BigInt], iniem: List[BigInt]) : Unit = {
     val ref = calmulredref(inpx, iniem)
-    test(new VMulRed(n=npx, nbits_px=nbits_px, nbits_iem=nbits_iem))
+    simulate(new VMulRed(n=npx, nbits_px=nbits_px, nbits_iem=nbits_iem))
     //.withAnnotations(Seq(VerilatorBackendAnnotation))
     { c =>
       inpx.zip(iniem).zipWithIndex.foreach { case ((px, iem), idx) =>
         c.io.in_px(idx).poke(px)
         c.io.in_iem(idx).poke(iem)
       }
-      println(f"out=${c.io.out.peek().litValue}  expected=${ref}")
+      //println(f"out=${c.io.out.peek().litValue}  expected=${ref}")
       c.io.out.expect(ref)
     }
   }
@@ -82,13 +83,13 @@ class VMulRedSpec extends CommonSpecConfig {
     val iemdata = Seq(8, -7, -31, 26)
     val ref = pxdata.zip(iemdata).map {case (a,b) => a * b}.reduce(_ + _)
 
-    test(new VMulRed(n=N, nbits_px=PXBW, nbits_iem=IEMBW))
+    simulate(new VMulRed(n=N, nbits_px=PXBW, nbits_iem=IEMBW))
     { c =>
       pxdata.zip(iemdata).zipWithIndex.foreach { case ((px, iem), idx) =>
         c.io.in_px(idx).poke(px)
         c.io.in_iem(idx).poke(iem)
       }
-      println(f"out=${c.io.out.peek().litValue}  expected=${ref}")
+      //println(f"out=${c.io.out.peek().litValue}  expected=${ref}")
       c.io.out.expect(ref)
     }
   }
