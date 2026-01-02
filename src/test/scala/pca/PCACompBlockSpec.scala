@@ -1,5 +1,6 @@
 package pca
 
+import chisel3.BuildInfo
 import org.scalatest.flatspec.AnyFlatSpec
 import chisel3.simulator.EphemeralSimulator._
 //import chisel3.simulator.scalatest.ChiselSim  // for 7.0 or later
@@ -7,6 +8,17 @@ import scala.collection.mutable.ArrayBuffer
 
 class PCACompBlockSpec extends AnyFlatSpec {
   behavior of "PCACompBlock"
+
+  "Check chisel version" should "pass" in {
+    println(s"Chisel version = ${BuildInfo.version}")
+  }
+
+  def resetPCACompBlock(dut: PCACompBlock) : Unit = {
+    dut.reset.poke(true)
+    dut.clock.step(1)
+    dut.reset.poke(false)
+    dut.clock.step(1)
+  }
 
   def updateIEM(dut: PCACompBlock, td: PCATestData, blockid: Int, cfg: PCAConfig): Unit = {
     dut.io.verifyIEM.poke(false)
@@ -65,12 +77,12 @@ class PCACompBlockSpec extends AnyFlatSpec {
     var ret : Array[Long] = Array.fill(cfg.m)(0)
 
     simulate(new PCACompBlock(cfg, debugprint = false)) { dut =>
+      resetPCACompBlock(dut)
       // val indata = Array.fill(td.blockwidth)(1.toLong)
       td.printInfo()
       // td.dumpMat()
       // td.dumpVec()
       updateIEM(dut, td, blockid, cfg)
-
 
       dut.io.indatavalid.poke(true)
       for (rowid <- 0 until cfg.h) {
@@ -108,6 +120,7 @@ class PCACompBlockSpec extends AnyFlatSpec {
 
   def singleBlockTest(cfg: PCAConfig) : Unit = {
     val td = new PCATestData(cfg)
+    println(s"Chisel version = ${BuildInfo.version}")
     testPCACompBlock(cfg, td, blockid = 0)
   }
 

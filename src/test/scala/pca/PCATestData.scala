@@ -1,6 +1,8 @@
 package pca
 
+import chisel3.BuildInfo
 import chisel3.util._
+
 import scala.util.Random
 
 /**
@@ -8,7 +10,6 @@ import scala.util.Random
  *
  * vec : row-vector with the size n.
  * mat : matrix with n rows and m cols.
- *
  *
  */
 class PCATestData(val cfg: PCAConfig = PCAConfigPresets.default) {
@@ -195,10 +196,14 @@ class PCATestData(val cfg: PCAConfig = PCAConfigPresets.default) {
 
 object PCATestData extends App {
   val rnd = new Random()
+  println(s"Chisel version = ${BuildInfo.version}")
 
-  val t = new PCATestData(PCAConfigPresets.large)
+  //val t = new PCATestData(PCAConfigPresets.large)
+  val t = new PCATestData(PCAConfigPresets.small)
   t.printInfo()
   t.validateRef()
+  t.dumpVec()
+  t.dumpMat()
 
   val data = t.blockmat(0)(0)(0)
   //val data = Array.fill(16) { (rnd.nextInt(200) - 100).toLong }
