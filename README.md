@@ -21,17 +21,21 @@ mill is another Scala/Java build tool without obscure DSL like SBT. You can down
 
 ### To run tests
 
-  $ make test
+```bash
+$ make test
+```
 
 ### To generate verilog
 
-  $ make gen
-  [info] welcome to sbt 1.8.0 (Ubuntu Java 17.0.17)
-  [info] loading settings for project pca-comp-chisel-build from plugins.sbt ...
-  [info] loading project definition from /home/kazutomo/gitwork/pca-comp-chisel/project
-  [info] loading settings for project root from build.sbt ...
-  [info] set current project to pca-comp (in build file:/home/kazutomo/gitwork/pca-comp-chisel/)
-  Design: nrows168_ncols192_nblocks8_w24_pxbw12_iembw8_npcs100 SRAM: depth168_width192
+```bash
+$ make gen
+[info] welcome to sbt 1.8.0 (Ubuntu Java 17.0.17)
+[info] loading settings for project pca-comp-chisel-build from plugins.sbt ...
+[info] loading project definition from /home/kazutomo/gitwork/pca-comp-chisel/project
+[info] loading settings for project root from build.sbt ...
+[info] set current project to pca-comp (in build file:/home/kazutomo/gitwork/pca-comp-chisel/)
+Design: nrows168_ncols192_nblocks8_w24_pxbw12_iembw8_npcs100 SRAM: depth168_width192
+```
 
 Note: Verilog files are generated inside the generated directory
 
