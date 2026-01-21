@@ -7,7 +7,7 @@ ThisBuild / logLevel := Level.Warn
 
 val chiselVersion = "7.6.0"
 
-Test / parallelExecution := false
+// Test / parallelExecution := false
 
 lazy val root = (project in file("."))
   .settings(
