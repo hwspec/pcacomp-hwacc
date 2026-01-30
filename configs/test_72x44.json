@@ -1,0 +1,9 @@
+{
+  "_comment": "Tests non-square, non-power-of-2 dimensions (72x44) to verify rectangular matrices work correctly",
+  "w": 72,
+  "h": 44,
+  "pxbw": 12,
+  "m": 50,
+  "encbw": 8,
+  "nblocks": 8
+}
