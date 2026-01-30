@@ -125,7 +125,9 @@ class PCACompBlock(cfg: PCAConfig = PCAConfigPresets.default,
   val fromiem = Wire(Vec(nmaxpcs, Vec(width, SInt(iembw.W))))
   val multiplied = Reg(Vec(nmaxpcs, Vec(width, SInt((pxbw + iembw).W))))
   val partialcompressed = Reg(Vec(nmaxpcs, SInt(redbw.W)))
-  val compressedAccReg = RegInit(VecInit(Seq.fill(nmaxpcs)(0.S(redbw.W))))
+  // Accumulator needs redbw + log2Ceil(nrows) bits to accumulate across nrows without overflow
+  val accbw = redbw + log2Ceil(nrows)
+  val compressedAccReg = RegInit(VecInit(Seq.fill(nmaxpcs)(0.S(accbw.W))))
   val compressedReg = RegInit(0.U((nmaxpcs*redbw).W))
 
   for(pos <- 0 until nmaxpcs) {
@@ -146,6 +148,10 @@ class PCACompBlock(cfg: PCAConfig = PCAConfigPresets.default,
   multipliedStageReg := dataReceivedStageReg
   reducedStageReg := multipliedStageReg
 
+  // Delay rowid by 3 cycles to match when partialcompressed is used in reducedStageReg
+  // Pipeline: dataReceivedStageReg -> multipliedStageReg -> reducedStageReg (2 cycles)
+  // But partialcompressed is a Reg updated when multipliedStageReg is true, so it's available
+  // when reducedStageReg is true. The 3-cycle delay accounts for the full pipeline latency.
   val rowidDelayed = ShiftRegister(io.rowid, 3)
 
   when(dataReceivedStageReg) {
@@ -176,25 +182,44 @@ class PCACompBlock(cfg: PCAConfig = PCAConfigPresets.default,
   }
 
   val outQ = Module(new Queue(chiselTypeOf(compressedReg),entries = 4))
-  val lastCompressedAcc = Wire(chiselTypeOf(compressedAccReg))
-  for (pos <- 0 until nmaxpcs) { lastCompressedAcc(pos) := 0.S }
+  // lastCompressedAcc needs to be redbw bits (for final output), not redbw+1
+  val lastCompressedAcc = Wire(Vec(nmaxpcs, SInt(redbw.W)))
+  // Wire to hold the updated accumulator value (combinational)
+  val updatedAcc = Wire(Vec(nmaxpcs, SInt(accbw.W)))
+  for (pos <- 0 until nmaxpcs) { 
+    lastCompressedAcc(pos) := 0.S
+    updatedAcc(pos) := 0.S
+  }
 
   when(reducedStageReg) {
     if(debugprint) { printf("%d stage: reduced: %d %d\n", clk, rowidDelayed, (nrows - 1).U)  }
 
-    when(rowidDelayed === (nrows - 1).U) {
-      if(debugprint) { printf("Compressed data accumulated\n")  }
-      for (pos <- 0 until nmaxpcs) {
-        lastCompressedAcc(pos) := (compressedAccReg(pos) + partialcompressed(pos))
-        compressedAccReg(pos) := 0.S
-      }
-      compressedReg := lastCompressedAcc.asTypeOf(UInt((nmaxpcs*redbw).W))
+    // Compute updated accumulator value (combinational) - same for both branches
+    // This computes: accumulator + current_row_partialcompressed
+    for (pos <- 0 until nmaxpcs) {
+      updatedAcc(pos) := compressedAccReg(pos) + partialcompressed(pos)
+    }
 
-      enqOutQReg := true.B
-    }.otherwise {
-      for (pos <- 0 until nmaxpcs) {
-        compressedAccReg(pos) := compressedAccReg(pos) + partialcompressed(pos)
+    // Check if this is the last row
+    val isLastRow = rowidDelayed === (nrows - 1).U
+    
+    // Always update accumulator first (for non-last rows) or reset it (for last row)
+    for (pos <- 0 until nmaxpcs) {
+      when(isLastRow) {
+        // On the last row: output the final accumulated value and reset accumulator
+        lastCompressedAcc(pos) := updatedAcc(pos)(redbw-1, 0).asSInt
+        compressedAccReg(pos) := 0.S(accbw.W)
+      }.otherwise {
+        // On non-last rows: accumulate the partialcompressed value
+        compressedAccReg(pos) := updatedAcc(pos)
       }
+    }
+    
+    // Output the result on the last row
+    when(isLastRow) {
+      if(debugprint) { printf("Compressed data accumulated\n")  }
+      compressedReg := lastCompressedAcc.asTypeOf(UInt((nmaxpcs*redbw).W))
+      enqOutQReg := true.B
     }
   }
 
@@ -237,14 +262,76 @@ object PCACompBlockCfg1 extends App {
 
 import play.api.libs.json._
 import scala.io.Source
+import scala.util.Using
 
 object PCACompBlockJson extends App {
-  val cfgfn = sys.env.getOrElse("PCAConfig", "default")
+  val cfgfn = if (args.length > 0) {
+    args(0)
+  } else {
+    sys.env.getOrElse("PCAConfig", "default")
+  }
 
   if(cfgfn == "default") {
     GenVerilog(new PCACompBlock(PCAConfigPresets.cfg1))
   } else {
-    println(cfgfn)
-    val src = Source.fromFile(cfgfn)
+    println(s"Loading config from: $cfgfn")
+    
+    try {
+      val config = Using.resource(Source.fromFile(cfgfn)) { src =>
+        val json = Json.parse(src.mkString)
+        
+        // Extract fields with defaults (matching PCAConfig defaults)
+        val w = (json \ "w").asOpt[Int].getOrElse(12)
+        val h = (json \ "h").asOpt[Int].getOrElse(3)
+        val pxbw = (json \ "pxbw").asOpt[Int].getOrElse(9)
+        val m = (json \ "m").asOpt[Int].getOrElse(7)
+        val encbw = (json \ "encbw").asOpt[Int].getOrElse(8)
+        val nblocks = (json \ "nblocks").asOpt[Int].getOrElse(3)
+        val seed = (json \ "seed").asOpt[Int]
+        val nonegative = (json \ "nonegative").asOpt[Boolean].getOrElse(false)
+        
+        // Validate that w is divisible by nblocks
+        if (w % nblocks != 0) {
+          throw new IllegalArgumentException(
+            s"w ($w) must be divisible by nblocks ($nblocks)"
+          )
+        }
+        
+        // Create PCAConfig
+        PCAConfig(
+          w = w,
+          h = h,
+          pxbw = pxbw,
+          m = m,
+          encbw = encbw,
+          nblocks = nblocks,
+          seed = seed,
+          nonegative = nonegative
+        )
+      }
+      
+      println(s"Config loaded: w=${config.w}, h=${config.h}, pxbw=${config.pxbw}, " +
+              s"m=${config.m}, encbw=${config.encbw}, nblocks=${config.nblocks}, " +
+              s"seed=${config.seed}, nonegative=${config.nonegative}")
+      
+      // Generate Verilog with the loaded config
+      GenVerilog(new PCACompBlock(config))
+      
+    } catch {
+      case e: java.io.FileNotFoundException =>
+        println(s"Error: Config file not found: $cfgfn")
+        sys.exit(1)
+      case e: play.api.libs.json.JsResultException =>
+        println(s"Error: Invalid JSON format in $cfgfn")
+        println(e.getMessage)
+        sys.exit(1)
+      case e: IllegalArgumentException =>
+        println(s"Error: ${e.getMessage}")
+        sys.exit(1)
+      case e: Exception =>
+        println(s"Error loading config: ${e.getMessage}")
+        e.printStackTrace()
+        sys.exit(1)
+    }
   }
 }
