@@ -1,0 +1,9 @@
+{
+  "_comment": "Tests non-power-of-2 square dimensions (100x100) to verify hardware handles arbitrary multiples of 4",
+  "w": 100,
+  "h": 100,
+  "pxbw": 12,
+  "m": 50,
+  "encbw": 8,
+  "nblocks": 4
+}
