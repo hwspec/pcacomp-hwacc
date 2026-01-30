@@ -1,0 +1,9 @@
+{
+  "_comment": "Tests minimal dimensions (4x4) to verify hardware works with smallest valid configuration",
+  "w": 4,
+  "h": 4,
+  "pxbw": 8,
+  "m": 3,
+  "encbw": 8,
+  "nblocks": 2
+}
