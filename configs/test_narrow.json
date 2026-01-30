@@ -1,0 +1,10 @@
+{
+  "_comment": "Tests narrow and tall aspect ratio (16x256) to verify many rows with few columns work correctly",
+  "w": 16,
+  "h": 256,
+  "pxbw": 12,
+  "m": 10,
+  "encbw": 8,
+  "nblocks": 4
+}
+
