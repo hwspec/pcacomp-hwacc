@@ -13,7 +13,7 @@ object GenVerilog {
   )
   val firtoolOpts_a = Array(
     "--disable-all-randomization",
-    "--strip-debug-info",
+    // "--strip-debug-info",  // Commented out to preserve printf statements for debugging
     "--lowering-options=disallowLocalVariables,disallowPackedArrays",
     "--verilog",
   )
