@@ -1,0 +1,10 @@
+{
+  "_comment": "Tests wide and short aspect ratio (256x16) to verify many columns with few rows work correctly",
+  "w": 256,
+  "h": 16,
+  "pxbw": 12,
+  "m": 10,
+  "encbw": 8,
+  "nblocks": 8
+}
+
