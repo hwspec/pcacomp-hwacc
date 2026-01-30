@@ -1,0 +1,10 @@
+{
+  "_comment": "Tests large non-power-of-2 dimensions (200x200) to verify accumulator bit width calculations at scale",
+  "w": 200,
+  "h": 200,
+  "pxbw": 12,
+  "m": 50,
+  "encbw": 8,
+  "nblocks": 8
+}
+
