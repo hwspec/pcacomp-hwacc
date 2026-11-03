@@ -5,7 +5,7 @@ ThisBuild / version          := "0.4.0"
 ThisBuild / organization     := "com.github.kazutomo"
 ThisBuild / logLevel := Level.Warn
 
-val chiselVersion = "7.6.0"
+val chiselVersion = "7.16.0"
 
 // Test / parallelExecution := false
 

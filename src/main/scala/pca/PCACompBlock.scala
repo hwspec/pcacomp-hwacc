@@ -148,10 +148,9 @@ class PCACompBlock(cfg: PCAConfig = PCAConfigPresets.default,
   multipliedStageReg := dataReceivedStageReg
   reducedStageReg := multipliedStageReg
 
-  // Delay rowid by 3 cycles to match when partialcompressed is used in reducedStageReg
-  // Pipeline: dataReceivedStageReg -> multipliedStageReg -> reducedStageReg (2 cycles)
-  // But partialcompressed is a Reg updated when multipliedStageReg is true, so it's available
-  // when reducedStageReg is true. The 3-cycle delay accounts for the full pipeline latency.
+  // rowidDelayed must line up with the row whose partialcompressed is consumed
+  // under reducedStageReg: 1 cycle of SRAM read latency + 2 pipeline register
+  // stages (dataReceivedStageReg -> multipliedStageReg -> reducedStageReg) = 3 cycles.
   val rowidDelayed = ShiftRegister(io.rowid, 3)
 
   when(dataReceivedStageReg) {
