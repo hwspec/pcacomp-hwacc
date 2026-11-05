@@ -1,0 +1,3 @@
+chiseltop=axipca.AxiPCACompBlock
+testdir=gwtests
+tests=base
