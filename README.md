@@ -8,6 +8,9 @@ arithmetic (lower-precision integer values) to optimize the resource
 usage. It can be applied to on-chip or near-sensor processing where
 spatially localized digital logic is required.
 
+See [`docs/implementation.md`](docs/implementation.md) for how the
+design works and how it is tested.
+
 ### Dependencies
 
 #### JDK 8 or newer
@@ -29,15 +32,26 @@ $ make test
 
 ```bash
 $ make gen
-[info] welcome to sbt 1.8.0 (Ubuntu Java 17.0.17)
-[info] loading settings for project pca-comp-chisel-build from plugins.sbt ...
-[info] loading project definition from /home/kazutomo/gitwork/pca-comp-chisel/project
-[info] loading settings for project root from build.sbt ...
-[info] set current project to pca-comp (in build file:/home/kazutomo/gitwork/pca-comp-chisel/)
-Design: nrows168_ncols192_nblocks8_w24_pxbw12_iembw8_npcs100 SRAM: depth168_width192
 ```
 
-Note: Verilog files are generated inside the generated directory
+This runs the `large` preset configuration (see `docs/implementation.md`
+for other presets and `PCAConfig` options) and writes the generated
+SystemVerilog to the `generated/` directory.
+
+### FPGA / cocotb testing (GarageWorks)
+
+`AxiPCACompBlock` (the AXI4-Lite wrapper) is also tested with
+[GarageWorks](https://github.com/hwspec/garageworks), which runs the same
+cocotb testbench in Verilator simulation and on FPGA. Project settings are
+in `.gwconfig`; the testbench and bridge live in `gwtests/`.
+
+```bash
+$ pip install garageworks
+$ gws          # run the prereq -> rtlgen -> cocotb stages in simulation
+$ gws --fpga   # also run the FPGA stages (needs Vivado/Vitis and an AVED board)
+```
+
+See `gws --help` and the GarageWorks docs for more.
 
 
 
